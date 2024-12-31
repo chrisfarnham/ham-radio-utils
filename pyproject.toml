@@ -1,0 +1,9 @@
+[project]
+version = "0.0.1"
+name = "ham-radio-utils"
+dependencies = [
+  "adif-io",
+  "matplotlib",
+  "pip-tools",
+  "polars",
+]
