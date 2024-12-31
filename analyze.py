@@ -25,11 +25,18 @@ def plot_mode_distribution(df):
   plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
   plt.show()
 
+def report_top_10_calls(df):
+    # Get the top 10 CALL entries by frequency
+    call_counts = df['CALL'].value_counts().sort('count', descending=True)
+    top_10_calls = call_counts.head(10)
+    print("Top 10 CALL entries:")
+    print(top_10_calls)
+
 def main():
 
   # Set up argument parser
   parser = argparse.ArgumentParser(description="Analyze ham radio data")
-  report_choices = ['columns', 'mode_distribution']
+  report_choices = ['columns', 'modedist', 'top10calls']
   parser.add_argument('report', choices=report_choices, default='columns', nargs='?', help='Type of report to generate')
 
   # Parse command-line arguments
@@ -43,6 +50,8 @@ def main():
     # Execute the specified report
     if args.report == 'mode_distribution':
         plot_mode_distribution(df)
+    if args.report == 'top10calls':
+      report_top_10_calls(df)
     else:
       print(df.columns)
 
