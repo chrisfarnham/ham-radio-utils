@@ -9,9 +9,12 @@ def plot_mode_distribution(df):
   mode_counts = df["MODE"].value_counts()
   print(mode_counts)
   total_mode = df["MODE"].count()
-  mode_counts = mode_counts.with_columns((mode_counts["count"] / total_mode * 100).alias("MODE_PERCENTAGE"))
-
+  mode_counts = mode_counts.with_columns((mode_counts["count"] / total_mode * 100).round(0).alias("MODE_PERCENTAGE"))
+  # Filter out entries with a percentage less than 1
+  mode_counts = mode_counts.filter(mode_counts['MODE_PERCENTAGE'] >= 1)
+  print(f"{total_mode} QSOs in 2025")
   print(mode_counts)
+
 
 
   # Extract data for the pie chart
@@ -42,13 +45,13 @@ def main():
   # Parse command-line arguments
   args = parser.parse_args()
 
-  with open("./w1ytq.349397.20241231142157.adi", 'r', encoding = "ISO-8859-1") as rf:
+  with open("./combined.adi", 'r', encoding = "ISO-8859-1") as rf:
     content = ''.join(rf.readlines())
     qsos, header = adif_io.read_from_string(content)
     df = pl.DataFrame([{k:v for k,v in q.items()} for q in qsos])
 
     # Execute the specified report
-    if args.report == 'mode_distribution':
+    if args.report == 'modedist':
         plot_mode_distribution(df)
     if args.report == 'top10calls':
       report_top_10_calls(df)
