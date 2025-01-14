@@ -33,7 +33,11 @@ shape: (10, 2)
 
 ```
 
-### Create a new adi file selecting only the QSOs that have "SKCC" in the comments attribute
+### SKCC Filter
+
+Creates a new adi file selecting only the QSOs that have "SKCC" in the comments attribute. I use this to turn a general
+QRZ adi export into an adi file containing only my SKCC contacts. I then import that filtered file into [SKCC's](https://www.skccgroup.com/)
+logging software.
 
 The command below creates a new adi file with an `skcc.adi` suffix that is a subset of the provided file. The new file
 will only have SKCC QSO records which are identified because their 'comments' attribute contains the string 'skcc' or 'SKCC'.
