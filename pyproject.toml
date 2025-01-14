@@ -3,6 +3,7 @@ version = "0.0.1"
 name = "ham-radio-utils"
 dependencies = [
   "adif-io",
+  "icecream",
   "matplotlib",
   "pip-tools",
   "polars",

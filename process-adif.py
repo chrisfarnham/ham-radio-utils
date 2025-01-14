@@ -1,9 +1,14 @@
+#! /usr/bin/env python3
+
 import unicodedata
+import copy
 
 import adif_io
 import matplotlib.pyplot as plt
 import polars as pl
 import argparse
+from pathlib import Path
+from icecream import ic
 
 def plot_mode_distribution(df):
   mode_counts = df["MODE"].value_counts()
@@ -35,26 +40,42 @@ def report_top_10_calls(df):
     print("Top 10 CALL entries:")
     print(top_10_calls)
 
+def filter_skcc(qsos):
+   qsos = ((q.get('comment'), q) for q in qsos)
+   qsos = (q for comment, q in qsos if comment and 'skcc' in comment.lower())
+   return qsos
+
 def main():
 
+
   # Set up argument parser
-  parser = argparse.ArgumentParser(description="Analyze ham radio data")
-  report_choices = ['columns', 'modedist', 'top10calls']
+  parser = argparse.ArgumentParser(__file__, description="Analyze ham radio data")
+  parser.add_argument('adif', type=str, help='ADIF file to process')
+  report_choices = ['columns', 'modedist', 'top10calls', 'skcc']
   parser.add_argument('report', choices=report_choices, default='columns', nargs='?', help='Type of report to generate')
 
   # Parse command-line arguments
   args = parser.parse_args()
 
-  with open("./combined.adi", 'r', encoding = "ISO-8859-1") as rf:
+  adif = Path.cwd().joinpath(args.adif)
+  ic(adif)
+  with open(adif, 'r', encoding = "ISO-8859-1") as rf:
     content = ''.join(rf.readlines())
     qsos, header = adif_io.read_from_string(content)
-    df = pl.DataFrame([{k:v for k,v in q.items()} for q in qsos])
-
+    lqsos = list(qsos)
+    df_qsos = copy.deepcopy(qsos)
+    df = pl.DataFrame([{k:v for k,v in q.items()} for q in df_qsos])
+    ic(lqsos)
     # Execute the specified report
     if args.report == 'modedist':
         plot_mode_distribution(df)
     if args.report == 'top10calls':
       report_top_10_calls(df)
+    if args.report == 'skcc':
+      qsos = filter_skcc(lqsos)
+      with open(Path.cwd().joinpath('output.adif'), 'w',  encoding = "ISO-8859-1") as wf:
+        wf.writelines((adif_io.qso_to_adif(q) for q in qsos))
+
     else:
       print(df.columns)
 
