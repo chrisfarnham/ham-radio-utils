@@ -58,14 +58,14 @@ def main():
   args = parser.parse_args()
 
   adif = Path.cwd().joinpath(args.adif)
-  ic(adif)
+  adif_basename_sans_suffix = Path(adif).stem
+
   with open(adif, 'r', encoding = "ISO-8859-1") as rf:
     content = ''.join(rf.readlines())
     qsos, header = adif_io.read_from_string(content)
     lqsos = list(qsos)
     df_qsos = copy.deepcopy(qsos)
     df = pl.DataFrame([{k:v for k,v in q.items()} for q in df_qsos])
-    ic(lqsos)
     # Execute the specified report
     if args.report == 'modedist':
         plot_mode_distribution(df)
@@ -73,7 +73,7 @@ def main():
       report_top_10_calls(df)
     if args.report == 'skcc':
       qsos = filter_skcc(lqsos)
-      with open(Path.cwd().joinpath('output.adif'), 'w',  encoding = "ISO-8859-1") as wf:
+      with open(Path.cwd().joinpath(f'{adif_basename_sans_suffix}.skcc.adi'), 'w',  encoding = "ISO-8859-1") as wf:
         wf.writelines((adif_io.qso_to_adif(q) for q in qsos))
 
     else:
