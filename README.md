@@ -40,7 +40,7 @@ will only have SKCC QSO records which are identified because their 'comments' at
 
 ```bash
 % ./process-adif.py w1ytq.349397.20250114172534.adi skcc
-(ham-radio-utils) cfarnham@Christophers-MacBook-Pro ham-radio-utils % ls -alt w1ytq.349397.20250114172534*
+% ls -alt w1ytq.349397.20250114172534*
 -rw-r--r--@ 1 cfarnham  staff  14741 Jan 14 17:08 w1ytq.349397.20250114172534.skcc.adi
 -rw-r--r--@ 1 cfarnham  staff  14741 Jan 14 16:56 w1ytq.349397.20250114172534.adi
 ```
