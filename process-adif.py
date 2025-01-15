@@ -1,13 +1,11 @@
 #! /usr/bin/env python3
 
-import unicodedata
-import copy
+import argparse
+from pathlib import Path
 
 import adif_io
 import matplotlib.pyplot as plt
 import polars as pl
-import argparse
-from pathlib import Path
 from icecream import ic
 
 
