@@ -54,10 +54,9 @@ def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(
         __file__, description="Analyze ham radio data")
-    parser.add_argument('adif', type=str, help='ADIF file to process')
     report_choices = ['columns', 'modedist', 'top10calls', 'skcc']
-    parser.add_argument('report', choices=report_choices,
-                        default='columns', nargs='?', help='Type of report to generate')
+    parser.add_argument('report', choices=report_choices, help='Type of report to generate')
+    parser.add_argument('adif', type=str, help='ADIF file to process')
 
     # Parse command-line arguments
     args = parser.parse_args()
@@ -87,6 +86,7 @@ def main():
                 wf.writelines((adif_io.qso_to_adif(q) for q in qsos))
 
         else:
+            print("")
             print(df.columns)
 
 

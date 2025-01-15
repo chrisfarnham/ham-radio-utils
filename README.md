@@ -4,14 +4,14 @@ Personal tool developed and used by W1YTQ to filter and generate statistics from
 
 ### View radio modes
 
-        ./process-adif.py combined.adi modedist
+        % ./process-adif.py modedist combined.adi
 
 ![Pie chart showing radio modes](./radio_mode_dist.png)
 
 ### Report top 10 call signs in your log
 
 ```bash
- % ./process-adif.py combined.adi top10calls
+ % ./process-adif.py top10calls combined.adi
 Top 10 CALL entries:
 shape: (10, 2)
 ┌────────┬───────┐
@@ -43,11 +43,22 @@ The command below creates a new adi file with an `skcc.adi` suffix that is a sub
 will only have SKCC QSO records which are identified because their 'comments' attribute contains the string 'skcc' or 'SKCC'.
 
 ```bash
-% ./process-adif.py w1ytq.349397.20250114172534.adi skcc
+% ./process-adif.py skcc w1ytq.349397.20250114172534.adi
 % ls -alt w1ytq.349397.20250114172534*
 -rw-r--r--@ 1 cfarnham  staff  14741 Jan 14 17:08 w1ytq.349397.20250114172534.skcc.adi
 -rw-r--r--@ 1 cfarnham  staff  14741 Jan 14 16:56 w1ytq.349397.20250114172534.adi
 ```
+
+### Display adif columns available for analysis
+
+This is to aid in writing new features or functions by displaying the values
+available for retrieval and analysis in your adi file.
+
+
+        % ./process-adif.py columns w1ytq.349397.20250114172534.adi
+
+        ['QSO_DATE', 'TIME_ON', 'CALL', 'FREQ', 'MODE', 'APP_QRZLOG_LOGID', 'APP_QRZLOG_QSLDATE', 'APP_QRZLOG_STATUS', 'BAND', 'BAND_RX', 'CNTY', 'COMMENT', 'CONT', 'COUNTRY', 'CQZ', 'DISTANCE', 'DXCC', 'EMAIL', 'EQSL_QSL_RCVD', 'EQSL_QSL_SENT', 'FREQ_RX', 'GRIDSQUARE', 'ITUZ', 'LAT', 'LON', 'LOTW_QSLRDATE', 'LOTW_QSLSDATE', 'LOTW_QSL_RCVD', 'LOTW_QSL_SENT', 'MY_CITY', 'MY_CNTY', 'MY_COUNTRY', 'MY_CQ_ZONE', 'MY_GRIDSQUARE', 'MY_ITU_ZONE', 'MY_LAT', 'MY_LON', 'MY_NAME', 'MY_STATE', 'NAME', 'QRZCOM_QSO_DOWNLOAD_DATE', 'QRZCOM_QSO_DOWNLOAD_STATUS', 'QRZCOM_QSO_UPLOAD_DATE', 'QRZCOM_QSO_UPLOAD_STATUS', 'QSL_RCVD', 'QSL_SENT', 'QSL_VIA', 'QSO_DATE_OFF', 'QTH', 'STATE', 'STATION_CALLSIGN', 'TIME_OFF', 'TX_PWR']
+
 
 ## Install
 
