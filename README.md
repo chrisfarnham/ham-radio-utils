@@ -68,13 +68,17 @@ available for retrieval and analysis in your adi file.
     'TIME_OFF', 'TX_PWR']
 ```
 
-## Install
+## How to install
 
 Ensure you have Python 3 installed, preferably in a virtual environment created with a tool like `pipenv`.
 
 Then run `pip install -r requirements.txt`
 
-## update requirements.txt
+## For developers
+
+### Manage dependencies
+
+First update `pyproject.toml` and use `pip-tools` to generate an updated `requirements.txt`.
 
 Only maintainers need to do this in cases where we want to manage dependencies.
 
@@ -85,3 +89,11 @@ Install pip-tools
 Make sure that pyproject.toml has the libraries you want and then type:
 
     pip-compile
+
+
+## Errata
+
+### What's up with the `docker-compose.yml` file?
+
+It's just a personal experiment in setting up [Wavelog](https://github.com/wavelog/wavelog) and I didn't know where else to save it. Ignore it
+or if it helps you use and learn more about Wavelog then please use it.
