@@ -1,13 +1,14 @@
 #! /usr/bin/env python3
 
 import argparse
+from functools import partial
 from pathlib import Path
 
 import adif_io
 import matplotlib.pyplot as plt
 import polars as pl
 from icecream import ic
-from functools import partial
+
 
 def plot_mode_distribution(df):
     mode_counts = df["MODE"].value_counts()
