@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import argparse
+from functools import partial
 from pathlib import Path
 
 import adif_io
@@ -44,7 +45,13 @@ def report_top_10_calls(df):
 def filter_skcc(qsos):
     qsos = ((q.get('comment'), q) for q in qsos)
     qsos = (q for comment, q in qsos if comment and 'skcc' in comment.lower())
+
     return qsos
+
+def add_key_type(qso, key_type='SK'):
+    # <APP_SKCCLOGGER_KEYTYPE:2>SK
+    qso = {**qso, **{'APP_SKCCLOGGER_KEYTYPE': key_type}}
+    return qso
 
 
 def main():
@@ -55,6 +62,7 @@ def main():
     report_choices = ['columns', 'modedist', 'top10calls', 'skcc']
     parser.add_argument('report', choices=report_choices, help='Type of report to generate')
     parser.add_argument('adif', type=str, help='ADIF file to process')
+    parser.add_argument('--key', type=str, default='', help="Add the SKCCLOGGER_KEYTYPE (e.g., 'SK') to the adif records")
 
     # Parse command-line arguments
     args = parser.parse_args()
@@ -74,6 +82,10 @@ def main():
             report_top_10_calls(df)
         if args.report == 'skcc':
             qsos = filter_skcc(qsos_list)
+            if args.key:
+                add_key_type_func = partial(add_key_type, key_type=args.key)
+                qsos = list(map(add_key_type_func, qsos))
+
             headers = {
                 "generated_by": "Source code found at https://github.com/chrisfarnham/ham-radio-utils",
                 "description": "Only QSOs with SKCC in comments",
