@@ -49,6 +49,14 @@ will only have SKCC QSO records which are identified because their 'comments' at
 -rw-r--r--@ 1 cfarnham  staff  14741 Jan 14 16:56 w1ytq.349397.20250114172534.adi
 ```
 
+You can also add the SKCC keytype like this:
+
+```bash
+./process-adif.py skcc --key=SK w1ytq.349397.20250117205912.adi
+```
+
+This will add the `APP_SKCCLOGGER_KEYTYPE` value used by the SKCC Logger for awards.
+
 ### Display adif columns available for analysis
 
 This is to aid in writing new features or functions by displaying the values
@@ -70,7 +78,7 @@ available for retrieval and analysis in your adi file.
 
 ## How to install
 
-Ensure you have Python 3 installed, preferably in a virtual environment created with a tool like `pipenv`.
+Ensure you have Python 3 installed, preferably in a virtual environment created with a tool like `pyenv`.
 
 Then run `pip install -r requirements.txt`
 
