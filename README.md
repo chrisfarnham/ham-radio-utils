@@ -57,6 +57,22 @@ You can also add the SKCC keytype like this:
 
 This will add the `APP_SKCCLOGGER_KEYTYPE` value used by the SKCC Logger for awards.
 
+
+### Add a comment to every QSO in the ADIF file
+
+Creates a new adi file with the comment updated with a given value.
+
+```bash
+% ./process-adif.py comment --comment="POTA at Dunstable Brook Wildlife Refuge, US-11590" \
+    ./Dunstable-Brook-Wildlife-Refuge,-January-25,-2025.adi
+```
+The command above will create a new file with a similar name like this `Dunstable-Brook-Wildlife-Refuge,-January-25,-2025.comments.adi` where
+each record will contain the provided comment.
+
+The above example created logs that look like the pic below.
+
+![](logbook_screenshot.png)
+
 ### Display adif columns available for analysis
 
 This is to aid in writing new features or functions by displaying the values

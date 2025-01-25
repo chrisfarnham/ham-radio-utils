@@ -34,7 +34,7 @@ def plot_mode_distribution(df):
     plt.show()
 
 
-def report_top_10_calls(df):
+def command_top_10_calls(df):
     # Get the top 10 CALL entries by frequency
     call_counts = df['CALL'].value_counts().sort('count', descending=True)
     top_10_calls = call_counts.head(10)
@@ -53,16 +53,28 @@ def add_key_type(qso, key_type='SK'):
     qso = {**qso, **{'APP_SKCCLOGGER_KEYTYPE': key_type}}
     return qso
 
+def add_comment(qso, comment=''):
+    comment = qso.get('comment', '') + '\n' + comment
+    comment = comment.strip()
+    qso = {**qso, **{'COMMENT': comment}}
+    return qso
+
+def write_adif(path: Path, headers, qsos):
+    headers = adif_io.headers_from_dict(headers)
+    with open(path, 'w',  encoding="ISO-8859-1") as wf:
+        wf.writelines(adif_io.headers_to_adif(headers))
+        wf.writelines((adif_io.qso_to_adif(q) for q in qsos))
 
 def main():
 
     # Set up argument parser
     parser = argparse.ArgumentParser(
         __file__, description="Analyze ham radio data")
-    report_choices = ['columns', 'modedist', 'top10calls', 'skcc']
-    parser.add_argument('report', choices=report_choices, help='Type of report to generate')
+    command_choices = ['columns', 'modedist', 'top10calls', 'skcc', 'comment']
+    parser.add_argument('command', choices=command_choices, help='Type of command to run')
     parser.add_argument('adif', type=str, help='ADIF file to process')
     parser.add_argument('--key', type=str, default='', help="Add the SKCCLOGGER_KEYTYPE (e.g., 'SK') to the adif records")
+    parser.add_argument('--comment', type=str, default='', help="Comment that you want added to the comment fields in your ADIF records")
 
     # Parse command-line arguments
     args = parser.parse_args()
@@ -75,12 +87,12 @@ def main():
         qsos, header = adif_io.read_from_string(content)
         qsos_list = list(qsos)
         df = pl.DataFrame([{k: v for k, v in q.items()} for q in qsos_list])
-        # Execute the specified report
-        if args.report == 'modedist':
+        # Execute the specified command
+        if args.command == 'modedist':
             plot_mode_distribution(df)
-        if args.report == 'top10calls':
-            report_top_10_calls(df)
-        if args.report == 'skcc':
+        if args.command == 'top10calls':
+            command_top_10_calls(df)
+        if args.command == 'skcc':
             qsos = filter_skcc(qsos_list)
             if args.key:
                 add_key_type_func = partial(add_key_type, key_type=args.key)
@@ -90,10 +102,24 @@ def main():
                 "generated_by": "Source code found at https://github.com/chrisfarnham/ham-radio-utils",
                 "description": "Only QSOs with SKCC in comments",
             }
-            headers = adif_io.headers_from_dict(headers)
-            with open(Path.cwd().joinpath(f'{adif_basename_sans_suffix}.skcc.adi'), 'w',  encoding="ISO-8859-1") as wf:
-                wf.writelines(adif_io.headers_to_adif(headers))
-                wf.writelines((adif_io.qso_to_adif(q) for q in qsos))
+            write_adif(Path.cwd().joinpath(f'{adif_basename_sans_suffix}.skcc.adi'), headers, qsos)
+
+
+        if args.command == 'comment':
+            if args.comment:
+                add_comment_func = partial(add_comment, comment=args.comment)
+                qsos = list(map(add_comment_func, qsos))
+            else:
+                print("--comment switch is required when using the comment command")
+                parser.print_help()
+                exit(1)
+
+            headers = {
+                "generated_by": "Source code found at https://github.com/chrisfarnham/ham-radio-utils",
+                "description": f"Appended comment {args.comment}  each QSO",
+            }
+            write_adif(Path.cwd().joinpath(f'{adif_basename_sans_suffix}.comments.adi'), headers, qsos)
+
 
         else:
             print("")
