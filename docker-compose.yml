@@ -2,7 +2,7 @@
 # docker-compose up -d
 services:
   wavelog-db:
-    image: mariadb:11.3
+    image: docker.io/mariadb:11.3
     container_name: wavelog-db
     environment:
       MARIADB_RANDOM_ROOT_PASSWORD: yes
@@ -27,14 +27,43 @@ services:
     ports:
       - "8086:80"
     restart: unless-stopped
+    deploy:
+      labels:
+        caddy: localhost
+        caddy.reverse_proxy: "{{upstreams 8086}}"
+        caddy.tls: "internal"
+
 
   watchtower:
-    image: containrrr/watchtower
+    image: docker.io/containrrr/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+
+  # The Caddy server container.
+  caddy:
+    # https://hub.docker.com/_/caddy
+    image: docker.io/caddy:alpine
+    container_name: reverse-proxy
+    restart: unless-stopped
+    # Map the app container exposed port to the host port.
+    ports:
+      - 443:443
+      - 2019:2019
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    # Caddy config
+      - $PWD/Caddyfile:/etc/caddy/Caddyfile
+    # Caddy certificate authority (CA)
+      - $PWD/certificate-authority:/data/caddy/pki/authorities/local
+
+# sudo cp certificate-authority/intermediate.crt /usr/local/share/ca-certificates/
+# sudo update-ca-certificates    
 
 volumes:
   wavelog-dbdata:
   wavelog-uploads:
   wavelog-userdata:
   wavelog-config:
+  caddy-data:
+  caddy-config:
