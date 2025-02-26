@@ -164,3 +164,5 @@ cython_debug/
 
 *adi
 certificate-authority
+# ignore playlists
+*m3u
