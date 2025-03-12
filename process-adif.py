@@ -33,6 +33,35 @@ def plot_mode_distribution(df):
     plt.axis('equal')
     plt.show()
 
+def plot_qsos_per_day(df):
+    # Convert the QSO_DATE column to datetime
+    df = df.with_columns(pl.col("QSO_DATE").str.strptime(pl.Date, "%Y%m%d"))
+
+    # Filter out any QSO that is not the first for that call sign
+    df = df.with_columns(pl.col("QSO_DATE").rank("dense").over("CALL").alias("rank"))
+    df = df.filter(pl.col("rank") == 1)
+
+    # Group by date and count the number of QSOs per day
+    qsos_per_day = df.group_by("QSO_DATE").agg(pl.count("CALL").alias("count")).sort("QSO_DATE")
+
+    # Calculate the cumulative sum of QSOs
+    qsos_per_day = qsos_per_day.with_columns(pl.col("count").cum_sum().alias("cumulative_count"))
+
+    # Extract data for the line graph
+    dates = qsos_per_day["QSO_DATE"].to_list()
+    cumulative_counts = qsos_per_day["cumulative_count"].to_list()
+
+    # Create a cumulative line graph
+    plt.figure(figsize=(10, 6))
+    plt.plot(dates, cumulative_counts, marker='o', linestyle='-', color='b')
+    plt.xlabel('Date')
+    plt.ylabel('Cumulative Number of QSOs')
+    plt.title('Cumulative QSOs per Day')
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()    
+
 
 def command_top_10_calls(df):
     # Get the top 10 CALL entries by frequency
@@ -70,7 +99,7 @@ def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(
         __file__, description="Analyze ham radio data")
-    command_choices = ['columns', 'modedist', 'top10calls', 'skcc', 'comment']
+    command_choices = ['columns', 'modedist', 'top10calls', 'skcc', 'comment', 'perday']
     parser.add_argument('command', choices=command_choices, help='Type of command to run')
     parser.add_argument('adif', type=str, help='ADIF file to process')
     parser.add_argument('--key', type=str, default='', help="Add the SKCCLOGGER_KEYTYPE (e.g., 'SK') to the adif records")
@@ -88,6 +117,8 @@ def main():
         qsos_list = list(qsos)
         df = pl.DataFrame([{k: v for k, v in q.items()} for q in qsos_list])
         # Execute the specified command
+        if args.command == 'perday':
+            plot_qsos_per_day(df)
         if args.command == 'modedist':
             plot_mode_distribution(df)
         if args.command == 'top10calls':
