@@ -1,0 +1,10 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+#chart {
+    width: 1200px; /* Updated width to match the new frame size */
+    height: 400px;
+    border: 1px solid #ccc;
+}
