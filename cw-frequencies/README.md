@@ -8,5 +8,6 @@ This project demonstrates a simple D3.js visualization.
 - `js/script.js`: JavaScript file containing D3.js code.
 
 ## Usage
-1. Open `index.html` in a browser.
-2. View the visualization rendered by D3.js.
+1. In your terminal, navigate to this directory
+2. Run `python3 -m http.server 8003`
+3. Navigate your browser as directed

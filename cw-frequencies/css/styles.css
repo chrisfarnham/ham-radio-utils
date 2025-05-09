@@ -3,8 +3,8 @@ body {
     margin: 20px;
 }
 
-#chart {
-    width: 1200px; /* Updated width to match the new frame size */
-    height: 400px;
+.chart {
+    width: 100%; /* Chart will take the full width of its container */
+    height: 400px; /* Fixed height for the chart */
     border: 1px solid #ccc;
 }

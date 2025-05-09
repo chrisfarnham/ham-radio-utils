@@ -1,10 +1,14 @@
-export function createChart(containerId, xDomain, chartHeight) {
-    const chartElement = document.getElementById(containerId);
-    const computedStyle = getComputedStyle(chartElement);
+// Define constants for font size control
+const BASE_FONT_SIZE_MULTIPLIER = 0.015; // Adjust this value to control the default font size scaling
+const MIN_FONT_SIZE = 8; // Minimum font size to ensure readability
+const MAX_FONT_SIZE = 12; // Maximum font size to prevent overly large text
 
-    // Define constants for width and height
-    const width = parseInt(computedStyle.width, 10);
-    const height = chartHeight || parseInt(computedStyle.height, 10);
+export function createChart(containerId, xDomain) {
+    const chartElement = document.getElementById(containerId);
+
+    // Get the width and height of the containing <div>
+    const width = chartElement.clientWidth; // Width of the container
+    const height = chartElement.clientHeight; // Height of the container
 
     const margin = { top: 20, right: 20, bottom: 50, left: 50 };
 
@@ -33,12 +37,18 @@ export function createChart(containerId, xDomain, chartHeight) {
         .attr("transform", `translate(0, ${height / 2})`) // Center the axis vertically
         .call(xAxis);
 
-    return { svg, xScale, colorScale, height };
+    return { svg, xScale, colorScale, height, width };
 }
 
 export function addPoint(chart, frequency, label, yOffset) {
-    const { svg, xScale, colorScale, height } = chart;
+    const { svg, xScale, colorScale, height, width } = chart;
     const y = height / 2 - yOffset; // Calculate the final y position using height and yOffset
+
+    // Dynamically calculate font size based on chart width
+    const fontSize = Math.min(
+        Math.max(MIN_FONT_SIZE, width * BASE_FONT_SIZE_MULTIPLIER),
+        MAX_FONT_SIZE
+    ); // Ensure font size is between MIN_FONT_SIZE and MAX_FONT_SIZE
 
     // Add the circle for the point
     svg.append("circle")
@@ -54,14 +64,20 @@ export function addPoint(chart, frequency, label, yOffset) {
         .attr("x", xScale(frequency)) // Position on the x-axis
         .attr("y", labelY) // Position based on yOffset
         .attr("text-anchor", "middle") // Center the text horizontally
-        .attr("font-size", "12px") // Font size
+        .attr("font-size", `${fontSize}px`) // Dynamically set font size
         .attr("fill", "black") // Text color
         .text(fullLabel); // Label text
 }
 
 export function addBar(chart, startFrequency, endFrequency, label, yOffset) {
-    const { svg, xScale, colorScale, height } = chart;
+    const { svg, xScale, colorScale, height, width } = chart;
     const y = height / 2 - yOffset; // Calculate the final y position using height and yOffset
+
+    // Dynamically calculate font size based on chart width
+    const fontSize = Math.min(
+        Math.max(MIN_FONT_SIZE, width * BASE_FONT_SIZE_MULTIPLIER),
+        MAX_FONT_SIZE
+    ); // Ensure font size is between MIN_FONT_SIZE and MAX_FONT_SIZE
 
     // Add the rectangle for the frequency range
     svg.append("rect")
@@ -81,7 +97,7 @@ export function addBar(chart, startFrequency, endFrequency, label, yOffset) {
         .attr("x", (xScale(startFrequency) + xScale(endFrequency)) / 2) // Center the label in the bar
         .attr("y", labelY) // Position based on yOffset
         .attr("text-anchor", "middle") // Center the text horizontally
-        .attr("font-size", "12px") // Font size
+        .attr("font-size", `${fontSize}px`) // Dynamically set font size
         .attr("fill", "black") // Text color
         .text(fullLabel); // Label text
 }
