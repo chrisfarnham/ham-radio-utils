@@ -162,7 +162,13 @@ cython_debug/
 #.idea/
 
 
-*adi
+# ignore exported logs
+*.adi
+*.adif
+# cached QRZ callsign lookups
+.qrz-cache.json
 certificate-authority
 # ignore playlists
-*m3u
+*.m3u
+# cached POTA park lookups
+.pota-cache.json
