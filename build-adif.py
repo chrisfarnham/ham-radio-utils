@@ -138,7 +138,11 @@ def build(session):
         # Park-to-park: the other station was also activating. On the paper log
         # this shows up as a POTA reference in the state column instead of a
         # state. SIG/SIG_INFO describe *their* park; MY_SIG/MY_SIG_INFO ours.
+        # A station activating several parks at once (an N-fer) is a list, which
+        # SIG_INFO carries comma-separated: "US-0161,US-3791".
         their_park = q.get("their_park")
+        if isinstance(their_park, list):
+            their_park = ",".join(their_park)
         if their_park:
             rec.append(adif("SIG", "POTA"))
             rec.append(adif("SIG_INFO", their_park))

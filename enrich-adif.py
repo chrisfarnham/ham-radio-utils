@@ -191,6 +191,9 @@ def pota_fetch(ref, cache):
     except Exception:
         cache[ref] = None
         return None
+    if not d:  # unknown park: the API answers with JSON null
+        cache[ref] = None
+        return None
     # locationDesc is like "US-MO", or "US-FL,US-MS" for a park spanning states.
     loc = (d.get("locationDesc") or "").split(",")
     states = [p.split("-")[-1] for p in loc if p.strip()]
@@ -226,11 +229,20 @@ def apply_pota_grids(records, use_cache=True):
             out.append(r)
             continue
 
-        park = pota_fetch(ref, cache)
-        if not park or not park["grid"]:
+        # SIG_INFO lists every park the other station was activating,
+        # comma-separated. They are one place, so the first park's grid stands
+        # for the contact; the state must hold across all of them.
+        refs = [x.strip() for x in ref.split(",") if x.strip()]
+        parks = [pota_fetch(x, cache) for x in refs]
+        if not all(parks) or not parks[0]["grid"]:
             notes.append((f.get("CALL", "?"), ref, "no park data", "", ""))
             out.append(r)
             continue
+        park = {
+            "grid": parks[0]["grid"],
+            "name": parks[0]["name"],
+            "states": sorted({st for p in parks for st in p["states"]}),
+        }
 
         old = f.get("GRIDSQUARE", "")
         new = park["grid"]

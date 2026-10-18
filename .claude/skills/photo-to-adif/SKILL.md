@@ -113,7 +113,10 @@ local time. The header usually states "UTC" explicitly; assume it regardless.
 
 **A `US-####` in the state column is a park-to-park contact**, not a state. It
 becomes `SIG`/`SIG_INFO` (the *other* station's park), distinct from
-`MY_SIG`/`MY_SIG_INFO`. Pass it to `build-adif.py` as `their_park`.
+`MY_SIG`/`MY_SIG_INFO`. Pass it to `build-adif.py` as `their_park`. A station
+working several parks at once (the page shows two references, or a ditto arrow
+from the line above) is one QSO: pass `their_park` as a list, and it is written
+comma-separated (`SIG_INFO` = `US-0161,US-3791`), not as one record per park.
 
 **Chris's handwriting idiosyncrasies:**
 
@@ -332,6 +335,10 @@ entirely -- often hundreds of miles off.
 The same pass replaces `STATE` with the park's state and drops the home
 `QTH`/`CNTY`. It is the one place enrichment deliberately overwrites existing
 values, and every change is reported.
+
+When `SIG_INFO` lists several parks (`US-0161,US-3791`), the first park's grid
+is used for the contact and the state is replaced only if every listed park sits
+in the same single state; the report notes the first park.
 
 Parks spanning two states (`locationDesc` like `US-FL,US-MS`) keep the logged
 state, since the park reference alone cannot say which side the operator was
