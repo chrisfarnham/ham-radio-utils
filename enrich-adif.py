@@ -382,7 +382,14 @@ def main():
         # QRZ's home location does not describe this QSO.
         logged_state = f.get("STATE", "").strip().upper()
         qrz_state = want.get("STATE", "").strip().upper()
-        away_from_home = bool(logged_state and qrz_state and logged_state != qrz_state)
+        # A park-to-park contact is pinned to the other station's park, and
+        # apply_pota_grids owns its location. QRZ's home QTH/CNTY never describe
+        # it, and its grid/state disagreeing with QRZ is expected, so none of
+        # those are filled or reported here. This also keeps a re-run from
+        # putting back the home QTH/CNTY that the park pass removed.
+        park_to_park = bool(f.get("SIG_INFO"))
+        away_from_home = bool(logged_state and qrz_state and logged_state != qrz_state
+                              and not park_to_park)
         if away_from_home:
             suppressed.append((call, logged_state, qrz_state))
 
@@ -393,7 +400,11 @@ def main():
                 continue
             if away_from_home and tag in LOCATION_FIELDS:
                 continue
+            if park_to_park and tag in ("QTH", "CNTY"):
+                continue
             if tag in f:
+                if park_to_park and tag in ("GRIDSQUARE", "STATE"):
+                    continue
                 if f[tag].strip().upper() != val.strip().upper():
                     conflicts.append((call, tag, f[tag], val))
                 continue
