@@ -119,11 +119,11 @@ def main():
         # Execute the specified command
         if args.command == 'perday':
             plot_qsos_per_day(df)
-        if args.command == 'modedist':
+        elif args.command == 'modedist':
             plot_mode_distribution(df)
-        if args.command == 'top10calls':
+        elif args.command == 'top10calls':
             command_top_10_calls(df)
-        if args.command == 'skcc':
+        elif args.command == 'skcc':
             qsos = filter_skcc(qsos_list)
             if args.key:
                 add_key_type_func = partial(add_key_type, key_type=args.key)
@@ -136,7 +136,7 @@ def main():
             write_adif(Path.cwd().joinpath(f'{adif_basename_sans_suffix}.skcc.adi'), headers, qsos)
 
 
-        if args.command == 'comment':
+        elif args.command == 'comment':
             if args.comment:
                 add_comment_func = partial(add_comment, comment=args.comment)
                 qsos = list(map(add_comment_func, qsos))

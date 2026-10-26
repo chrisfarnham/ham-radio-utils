@@ -1,6 +1,86 @@
 # ham-radio-utils
 
-Personal tool developed and used by W1YTQ to filter and generate statistics from radio logging exports in adif format.
+Personal tooling used by W1YTQ for amateur radio logs in [ADIF](https://adif.org/) format. It does three jobs:
+
+1. **Paper log to ADIF.** Turn a photo of a handwritten log (usually a POTA activation) into a validated, QRZ-enriched
+   `.adi` file ready to import into HAMRS, QRZ, LoTW or POTA. See [Paper log to ADIF](#paper-log-to-adif).
+2. **Filter and analyze existing logs.** Tag every QSO with a comment, pull out SKCC contacts, and chart modes, top
+   callsigns and QSOs per day. See [`process-adif.py`](#processing-and-analyzing-adif-files).
+3. **Small side tools.** A CW frequency chart and a Wavelog setup. See [Other contents](#other-contents).
+
+## What is in the repo
+
+| Path | Purpose |
+|---|---|
+| `build-adif.py` | Builds an ADIF file from a session JSON (date, frequency, optional park, QSO list). Computes every length prefix, so the output is spec-conformant. `park` is optional: leave it out for non-POTA logs. |
+| `enrich-adif.py` | Fills empty fields (name, city, state, county, grid, country) from the QRZ.com XML API and, for park-to-park contacts, from the POTA API. Never overwrites a logged value; disagreements are reported. Dry run by default, `--apply` writes. |
+| `process-adif.py` | Analysis and filtering commands: `comment`, `skcc`, `modedist`, `top10calls`, `perday`, `columns`. |
+| `.claude/skills/photo-to-adif/SKILL.md` | The Claude Code skill that drives the paper-log workflow: transcription rules, callsign verification, enrichment and validation. |
+| `docs/qrz-xml-interface-spec.md` | Local copy of the QRZ XML interface specification, used by `enrich-adif.py`. |
+| `cw-frequencies/` | Static D3.js chart of CW usage on 20 meters (see its README). |
+| `docker-compose.yml`, `Caddyfile`, `connect.sh` | Personal [Wavelog](https://github.com/wavelog/wavelog) experiment: database and app containers, a Caddy reverse proxy, and a script that starts `flrig` and a Wavelog gateway. |
+| `lofi_kbos.sh` | Writes a `.m3u` playlist of lo-fi streams for background listening while operating. Currently broken (see below). |
+| `requirements.txt`, `pyproject.toml` | Python dependencies (`pyproject.toml` is the source, `requirements.txt` is generated). |
+
+Exported logs (`*.adi`, `*.adif`), QRZ and POTA lookup caches and `.env` are gitignored. The `.adi` files you see in a
+working copy are local data, not part of the repository.
+
+## Paper log to ADIF
+
+The workflow is a Claude Code skill (`photo-to-adif`) plus the two deterministic scripts above. Claude reads the
+photo and makes the judgement calls; the scripts do the byte-exact work.
+
+1. **Transcribe.** The page is read into a session JSON. Callsigns with no time are excluded, struck entries are
+   deleted, frequency carries forward, and ambiguous calls are checked with the operator rather than guessed. Calls
+   are cross-checked against QRZ, earlier logs, and spot or hunter-log evidence when available.
+2. **Build.** `./build-adif.py session.json -o "Park-Name---US-0000,-Month-D,-YYYY.adi"`
+3. **Enrich.** `./enrich-adif.py file.adi` for a dry run, then `--apply`.
+4. **Comment.** `./process-adif.py comment --comment "POTA @ Park Name" file.adi` writes a `.comments.adi` sibling.
+5. **Validate.** Check that every field length matches its value and the record count matches the page.
+
+Session JSON shape:
+
+```json
+{
+  "date": "20261024",
+  "freq": "14.044",
+  "mode": "SSB",
+  "park": "US-0745",
+  "my_gridsquare": "FN42fo",
+  "qsos": [
+    {"time": "1500", "call": "K4HNH", "their_park": ["US-0161", "US-3791"]},
+    {"time": "1505", "call": "DF7A", "freq": "21.340", "country": "GERMANY", "dxcc": "230"}
+  ]
+}
+```
+
+- **Defaults** (top of `build-adif.py`): operator W1YTQ, `MY_STATE` MA, mode CW, 20 W, RST 599, country USA (DXCC 291).
+  Override any of them in the session JSON; DX contacts need `country` and `dxcc`.
+- **POTA.** With `park`, each record gets `MY_POTA_REF`, `MY_SIG` and `MY_SIG_INFO`. A contact made by a station that
+  was itself in a park carries `their_park` (`SIG`/`SIG_INFO`); a list is written comma-separated for a multi-park
+  activator. The enrichment step then uses the park's grid and state instead of the operator's home data.
+- **Non-POTA logs.** Leave `park` out and the file has no `MY_POTA_REF`, `MY_SIG` or `MY_SIG_INFO`.
+- **Travel.** If a station's logged state disagrees with QRZ, the logged state is kept and QRZ's city, county and grid
+  are skipped, because they describe the wrong place.
+- **Encoding.** Files are read and written as ISO-8859-1 so length prefixes stay correct for accented names.
+- **Station grid.** `my_gridsquare` must match the station locator configured in HAMRS, or HAMRS skips the QSOs on import
+  with "Differing locator".
+
+### QRZ setup
+
+`enrich-adif.py` needs an active QRZ XML subscription. Put credentials in `.env` (gitignored):
+
+```
+qrz_username=W1YTQ   # your QRZ.com callsign, not an email address
+qrz_password=...
+```
+
+Lookups are cached in `.qrz-cache.json` and park lookups in `.pota-cache.json`.
+
+## Processing and analyzing ADIF files
+
+`process-adif.py` takes a command and an ADIF file: `./process-adif.py <command> <file.adi>`.
+
 
 ### View radio modes
 
@@ -124,6 +204,21 @@ Make sure that pyproject.toml has the libraries you want and then type:
 
     pip-compile
 
+
+## Other contents
+
+### `cw-frequencies/`
+
+A static page that charts where CW activity sits on 20 meters, drawn with D3.js. Serve it with
+`python3 -m http.server 8003` from that directory.
+
+### `lofi_kbos.sh`
+
+Regenerates `lofiyt.m3u`, a playlist of lo-fi streams (gitignored), adapted from
+[lofiatc.sh](https://github.com/phazus/lofiatc.sh).
+
+**Currently broken:** the lo-fi streams changed their access policies, so the playlist no longer plays. A fix is
+planned.
 
 ## Errata
 
