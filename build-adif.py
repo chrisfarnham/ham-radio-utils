@@ -22,7 +22,8 @@ The JSON looks like:
       ]
     }
 
-Only date, freq, park and qsos are required; the rest have defaults below.
+Only date, freq and qsos are required; the rest have defaults below. Leave out
+park for a non-POTA log: MY_POTA_REF, MY_SIG and MY_SIG_INFO are then omitted.
 BAND is derived from FREQ. Per-QSO keys (name, qth, state, cnty, country,
 gridsquare, dxcc, comment) are optional -- leave out anything the paper log
 did not record and let enrich-adif.py fill it from QRZ.
@@ -83,13 +84,14 @@ def build(session):
     cfg = dict(DEFAULTS)
     cfg.update({k: v for k, v in session.items() if k != "qsos"})
 
-    for required in ("date", "freq", "park", "qsos"):
+    # park is optional: omit it for a non-POTA log (no MY_POTA_REF/MY_SIG*).
+    for required in ("date", "freq", "qsos"):
         if not session.get(required):
             sys.exit("session JSON is missing required key %r" % required)
 
     freq = str(cfg["freq"])
     band = cfg.get("band") or band_for(freq)
-    park = cfg["park"]
+    park = cfg.get("park")
 
     out = [
         adif("ADIF_VER", cfg["adif_ver"]),
@@ -117,7 +119,7 @@ def build(session):
             adif("OPERATOR", cfg["operator"]),
             adif("FREQ", q.get("freq", freq)),
             adif("BAND", band_for(q["freq"]) if q.get("freq") else band),
-            adif("MY_POTA_REF", park),
+            *([adif("MY_POTA_REF", park)] if park else []),
             adif("MY_GRIDSQUARE", cfg["my_gridsquare"]),
             adif("MODE", q.get("mode", cfg["mode"])),
             adif("TX_PWR", q.get("tx_pwr", cfg["tx_pwr"])),
@@ -147,8 +149,9 @@ def build(session):
             rec.append(adif("SIG", "POTA"))
             rec.append(adif("SIG_INFO", their_park))
 
-        rec.append(adif("MY_SIG", "POTA"))
-        rec.append(adif("MY_SIG_INFO", park))
+        if park:
+            rec.append(adif("MY_SIG", "POTA"))
+            rec.append(adif("MY_SIG_INFO", park))
         rec.append("<EOR>")
         out.extend(rec)
         out.append("")

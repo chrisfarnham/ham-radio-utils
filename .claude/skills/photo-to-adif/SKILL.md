@@ -230,6 +230,9 @@ Write a session JSON, then generate:
 ./build-adif.py session.json -o "Alewife-Brook---US-8399,-June-18,-2026.adi"
 ```
 
+For a log that is not a POTA activation (casual contacts in the field), leave out
+`park`: the file then has no `MY_POTA_REF`, `MY_SIG` or `MY_SIG_INFO`.
+
 Include only what the paper log records. Leave `name`/`qth`/`cnty`/`gridsquare`
 out and let step 7 fill them. `BAND` is derived from `freq`; US `COUNTRY`/`DXCC`
 default in. Defaults for operator, power, mode and `MY_STATE` live at the top of
