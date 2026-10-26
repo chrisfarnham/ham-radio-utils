@@ -16,6 +16,7 @@ Personal tooling used by W1YTQ for amateur radio logs in [ADIF](https://adif.org
 | `enrich-adif.py` | Fills empty fields (name, city, state, county, grid, country) from the QRZ.com XML API and, for park-to-park contacts, from the POTA API. Never overwrites a logged value; disagreements are reported. Dry run by default, `--apply` writes. |
 | `process-adif.py` | Analysis and filtering commands: `comment`, `skcc`, `modedist`, `top10calls`, `perday`, `columns`. |
 | `.claude/skills/photo-to-adif/SKILL.md` | The Claude Code skill that drives the paper-log workflow: transcription rules, callsign verification, enrichment and validation. |
+| `with-qrz.sh` | Optional wrapper that runs a command with the QRZ credentials read from a LastPass note instead of `.env`. Not needed otherwise. |
 | `docs/qrz-xml-interface-spec.md` | Local copy of the QRZ XML interface specification, used by `enrich-adif.py`. |
 | `cw-frequencies/` | Static D3.js chart of CW usage on 20 meters (see its README). |
 | `docker-compose.yml`, `Caddyfile`, `connect.sh` | Personal [Wavelog](https://github.com/wavelog/wavelog) experiment: database and app containers, a Caddy reverse proxy, and a script that starts `flrig` and a Wavelog gateway. |
@@ -76,6 +77,21 @@ qrz_password=...
 ```
 
 Lookups are cached in `.qrz-cache.json` and park lookups in `.pota-cache.json`.
+
+#### Optional: keep the credentials in LastPass
+
+Nothing requires this. `.env` or plain environment variables work on their own. If you keep the credentials in
+LastPass, `with-qrz.sh` runs any command with them loaded and never writes them to disk:
+
+```bash
+brew install lastpass-cli && lpass login you@example.com
+# a secure note named ham-radio-utils/qrz whose body is the same KEY=value lines as .env
+lpass add --notes --non-interactive "ham-radio-utils/qrz" < .env
+
+./with-qrz.sh ./enrich-adif.py "file.adi" --apply
+```
+
+Set `QRZ_LPASS_NOTE` to use a different note name. Quote any value that contains spaces, `$` or `#`.
 
 ## Processing and analyzing ADIF files
 
