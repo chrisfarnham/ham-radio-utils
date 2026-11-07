@@ -119,5 +119,83 @@ Make sure that pyproject.toml has the libraries you want and then type:
 
 ### What's up with the `docker-compose.yml` file?
 
-It's just a personal experiment in setting up [Wavelog](https://github.com/wavelog/wavelog) and I didn't know where else to save it. Ignore it
-or if it helps you use and learn more about Wavelog then please use it.
+It's my personal setup for [Wavelog](https://github.com/wavelog/wavelog), and I didn't know where else to save it. Ignore it,
+or use it if it helps you learn Wavelog. See [Wavelog setup](#wavelog-setup) below.
+
+## Wavelog setup
+
+`docker-compose.yml` runs Wavelog rootless with podman and `podman-compose`, on the host `chris-radio-station`.
+
+| Container       | Purpose                                       | Host port |
+|-----------------|-----------------------------------------------|-----------|
+| `wavelog-main`  | Wavelog (Apache + PHP)                        | `8086`    |
+| `wavelog-db`    | MariaDB for Wavelog                           | none      |
+| `reverse-proxy` | Caddy; `https://localhost` → `wavelog-main`   | `443`, `2019` (admin) |
+
+### Start it, and start it on boot
+
+```bash
+podman-compose up -d
+
+# start the stack at login/boot via a systemd user unit
+podman-compose systemd -a register
+systemctl --user enable --now podman-compose@ham-radio-utils
+```
+
+### URLs
+
+- `http://chris-radio-station.local:8086/`: the main URL, works on the LAN over mDNS.
+- `http://<LAN-IP>:8086/`, or `http://<tailscale-IP>:8086/` from other tailnet devices (phones often can't resolve `.local`).
+- `https://localhost/`: through Caddy, on this machine only. Trust `certificate-authority/intermediate.crt` first
+  (see the comments in `docker-compose.yml`).
+
+### `base_url` (configured in the volume, not in compose)
+
+Wavelog redirects every request to its `base_url`. If that host doesn't resolve for the browser, the page fails to load,
+even though port 8086 is working. The setting lives in
+`application/config/docker/config.php` inside the `ham-radio-utils_wavelog-config` volume:
+
+```bash
+~/.local/share/containers/storage/volumes/ham-radio-utils_wavelog-config/_data/config.php
+```
+
+This file is owned by the container's user, so edit it with `podman unshare` (for example `podman unshare vi <path>`).
+It's plain PHP, so it follows whichever allowed host the browser used and falls back to a fixed one. Unknown `Host`
+headers are never used in links:
+
+```php
+// Follow the host the browser used, if it's one we trust; else fall back to the Tailscale IP.
+$wl_allowed_hosts = array('chris-radio-station.local', 'chris-radio-station', '<LAN-IP>', '<tailscale-IP>', 'localhost', '127.0.0.1');
+$wl_host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
+$config['base_url'] = in_array($wl_host, $wl_allowed_hosts, true)
+	? 'http://' . $wl_host . ':8086/'
+	: 'http://<tailscale-IP>:8086/';
+```
+
+The change takes effect on the next request, with no restart needed. If you change the published port in
+`docker-compose.yml`, update `:8086` here as well.
+
+### mDNS (`.local`) name: avahi config
+
+On Wi-Fi with IPv6, avahi sometimes mistakes its own announcement for another device at boot and renames the host.
+The log shows `Host name conflict, retrying with chris-radio-station-2`, and after that `chris-radio-station.local`
+stops resolving. The host's lookups only use IPv4 mDNS (`mdns4_minimal` in `/etc/nsswitch.conf`), so I limit avahi to IPv4
+on the Wi-Fi interface in `/etc/avahi/avahi-daemon.conf`:
+
+```ini
+[server]
+use-ipv6=no
+allow-interfaces=wlp3s0
+```
+
+```bash
+sudo systemctl restart avahi-daemon
+getent ahostsv4 chris-radio-station.local   # should print the LAN IP
+journalctl -u avahi-daemon -b | grep "Host name is"
+```
+
+### Troubleshooting "can't connect on 8086"
+
+1. Check the port itself: `curl -sI http://127.0.0.1:8086/` should return `307` with a `Location:` header.
+2. If it does, the `Location` host is the problem. Check it resolves: `getent ahostsv4 <host>`.
+3. Check for an avahi rename: `journalctl -u avahi-daemon -b | grep -i conflict`.

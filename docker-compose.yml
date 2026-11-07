@@ -1,5 +1,12 @@
 ---
-# docker-compose up -d
+# Wavelog stack, run rootless with podman-compose. See "Wavelog setup" in README.md.
+#
+#   podman-compose up -d
+#   podman-compose systemd -a register && systemctl --user enable --now podman-compose@ham-radio-utils
+#
+# Wavelog is served at http://chris-radio-station.local:8086/ (mDNS via avahi).
+# Wavelog's base_url is NOT set here: it lives in config.php inside the
+# wavelog-config volume. See the README for the multi-host snippet used there.
 services:
   wavelog-db:
     image: docker.io/mariadb:11.3
@@ -25,21 +32,17 @@ services:
       - wavelog-uploads:/var/www/html/uploads
       - wavelog-userdata:/var/www/html/userdata
     ports:
+      # Must match the port in base_url (config.php in the wavelog-config volume).
       - "8086:80"
     restart: unless-stopped
-    deploy:
-      labels:
-        caddy: localhost
-        caddy.reverse_proxy: "{{upstreams 8086}}"
-        caddy.tls: "internal"
 
+  # watchtower:
+  #   image: docker.io/containrrr/watchtower
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
 
-  watchtower:
-    image: docker.io/containrrr/watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  # The Caddy server container.
+  # The Caddy server container. Proxies https://localhost -> wavelog-main:80
+  # using its internal CA (see Caddyfile); routing is defined in the Caddyfile.
   caddy:
     # https://hub.docker.com/_/caddy
     image: docker.io/caddy:alpine
@@ -53,9 +56,9 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     # Caddy config
-      - $PWD/Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile
     # Caddy certificate authority (CA)
-      - $PWD/certificate-authority:/data/caddy/pki/authorities/local
+      - ./certificate-authority:/data/caddy/pki/authorities/local
 
 # sudo cp certificate-authority/intermediate.crt /usr/local/share/ca-certificates/
 # sudo update-ca-certificates    
