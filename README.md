@@ -142,6 +142,34 @@ podman-compose systemd -a register
 systemctl --user enable --now podman-compose@ham-radio-utils
 ```
 
+### Start flrig and WaveLogGate at login
+
+[flrig](http://www.w1hkj.org/) controls the rig over CAT, and WaveLogGate passes its frequency and mode to Wavelog.
+`connect.sh` starts both by hand. To start them at GNOME login, there are two desktop entries in `~/.config/autostart/`
+(they aren't in this repo):
+
+```ini
+# ~/.config/autostart/flrig.desktop
+[Desktop Entry]
+Type=Application
+Name=flrig
+Exec=/usr/local/bin/flrig
+X-GNOME-Autostart-enabled=true
+```
+
+```ini
+# ~/.config/autostart/wavelog-gate-by-dj7nt.desktop
+[Desktop Entry]
+Type=Application
+Name=WaveLogGate
+Exec=/usr/bin/wavelog-gate-by-dj7nt
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=5
+```
+
+WaveLogGate starts 5 seconds after login, so flrig is already running when it connects. To turn either one off,
+delete its file or switch it off in GNOME Tweaks → Startup Applications.
+
 ### URLs
 
 - `http://chris-radio-station.local:8086/`: the main URL, works on the LAN over mDNS.
