@@ -6,6 +6,7 @@
 {
   debug
   local_certs
+  default_sni 192.168.1.211
   auto_https disable_redirects
   admin 0.0.0.0:2019
 }
@@ -16,7 +17,7 @@
 #--------------------------------------------------------------------------
 
 # HTTPS site block
-localhost:443 {
+localhost, chris-radio-station.local, 192.168.1.211 {
   tls internal
   reverse_proxy wavelog-main:80
 }

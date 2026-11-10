@@ -167,10 +167,16 @@ headers are never used in links:
 // Follow the host the browser used, if it's one we trust; else fall back to the Tailscale IP.
 $wl_allowed_hosts = array('chris-radio-station.local', 'chris-radio-station', '<LAN-IP>', '<tailscale-IP>', 'localhost', '127.0.0.1');
 $wl_host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
+// Requests arriving via the Caddy HTTPS proxy carry X-Forwarded-Proto: https; link back over HTTPS (port 443).
+$wl_https = isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https';
+$wl_prefix = $wl_https ? 'https://' : 'http://';
+$wl_suffix = $wl_https ? '/' : ':8086/';
 $config['base_url'] = in_array($wl_host, $wl_allowed_hosts, true)
-	? 'http://' . $wl_host . ':8086/'
-	: 'http://<tailscale-IP>:8086/';
+	? $wl_prefix . $wl_host . $wl_suffix
+	: $wl_prefix . '<tailscale-IP>' . $wl_suffix;
 ```
+
+Without the `X-Forwarded-Proto` check, every HTTPS request through Caddy gets redirected back to `http://<host>:8086/`.
 
 The change takes effect on the next request, with no restart needed. If you change the published port in
 `docker-compose.yml`, update `:8086` here as well.
